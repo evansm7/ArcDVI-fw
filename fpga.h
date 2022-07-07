@@ -8,7 +8,7 @@
 /* Init the FPGA subsystem (e.g. GPIOs, clocks) */
 void    fpga_init();
 /* Load a bitstream */
-void    fpga_load(uint8_t *bitstream, unsigned int len);
+int     fpga_load(uint8_t *bitstream, unsigned int len);
 /* Test if FPGA configuration is done */
 bool    fpga_is_ready();
 /* Returns to uninitialised state: */

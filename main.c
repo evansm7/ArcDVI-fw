@@ -31,15 +31,21 @@
 #include "fpga.h"
 #include "video.h"
 
+extern uint8_t fpga_bitstream[];
+extern unsigned int fpga_bitstream_length;
+
 int main()
 {
 	stdio_init_all();
 
 	printf("OHAI\n");
 
-        fpga_init();
-
         video_init();
+        fpga_init();
+        printf("FPGA: Bitstream %d bytes at %p, programming:\n",
+               fpga_bitstream_length, fpga_bitstream);
+        int r = fpga_load(fpga_bitstream, fpga_bitstream_length);
+        printf(" -> Return value %d\n", r);
 
         int i = 0;
 	while (true) {
