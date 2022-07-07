@@ -53,7 +53,7 @@ static int      video_reg_write(uint8_t addr, uint8_t reg, uint8_t val)
         uint8_t buff[2];
         buff[0] = reg;
         buff[1] = val;
-        return i2c_write_blocking(MCU_VID_I2C, addr, (uint8_t *)&buff, 2, false);
+        return i2c_write_blocking(MCU_VID_I2C, addr, buff, 2, false);
 }
 
 static void     video_testcard()
@@ -69,8 +69,6 @@ static void     video_testcard()
 
 int     video_init()
 {
-        uint8_t buff[8];
-
         VDB("+++ video_tda19988 init:\n");
 
         vid_i2c_init();
