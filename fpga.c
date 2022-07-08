@@ -126,3 +126,36 @@ void    fpga_reset()
         sleep_ms(1);
         gpio_put(MCU_FPGA_nRESET, 1);
 }
+
+uint32_t        fpga_read32(unsigned int addr)
+{
+        uint8_t packet[4];
+        uint32_t rdata;
+
+        packet[0] = (0 << 6) | ((addr >> 6) & 0x3f);
+        packet[1] = (addr << 2) & 0xff;
+        gpio_put(MCU_FPGA_SS, 0);
+        spi_write_blocking(spi0, &packet[0], 2);
+        spi_read_blocking(spi0, 0, &packet[0], 4);
+        gpio_put(MCU_FPGA_SS, 1);
+
+        rdata = ((uint32_t)packet[0] << 24) | ((uint32_t)packet[1] << 16) |
+                ((uint32_t)packet[2] << 8) | packet[3];
+        return rdata;
+}
+
+void            fpga_write32(unsigned int addr, uint32_t data)
+{
+        uint8_t packet[6];
+        uint32_t rdata;
+
+        packet[0] = (1 << 6) | ((addr >> 6) & 0x3f);
+        packet[1] = (addr << 2) & 0xff;
+        packet[2] = data >> 24;
+        packet[3] = data >> 16;
+        packet[4] = data >> 8;
+        packet[5] = data;
+        gpio_put(MCU_FPGA_SS, 0);
+        spi_write_blocking(spi0, &packet[0], 6);
+        gpio_put(MCU_FPGA_SS, 1);
+}

@@ -14,4 +14,8 @@ bool    fpga_is_ready();
 /* Returns to uninitialised state: */
 void    fpga_reset();
 
+/* Payload register I/O */
+uint32_t        fpga_read32(unsigned int addr);
+void            fpga_write32(unsigned int addr, uint32_t data);
+
 #endif
