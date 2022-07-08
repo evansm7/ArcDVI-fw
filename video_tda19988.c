@@ -76,6 +76,7 @@ int     video_init_output()
         video_reg_write(VID_ADDR_HDMI, TDA_REG_PAGE, 0);        /* Page 0 */
 
         video_reg_write(VID_ADDR_HDMI, 0xe4, 0);                /* Test mode off */
+        video_reg_write(VID_ADDR_HDMI, 0xf0, 0x00);             /* RPT_CNTRL */
 
         unsigned int c_refpix;
         unsigned int c_refline;
