@@ -28,6 +28,7 @@
 #include <string.h>
 #include "pico/stdlib.h"
 
+#include "version.h"
 #include "fpga.h"
 #include "hw.h"
 #include "dvo.h"
@@ -65,7 +66,7 @@ int main()
 {
 	stdio_init_all();
 
-	printf("OHAI\n");
+	printf("ArcDVI version " BUILD_VERSION " (" BUILD_SHA "), built " BUILD_TIME "\n");
 
         cmd_init();
 

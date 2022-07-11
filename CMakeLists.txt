@@ -23,6 +23,9 @@
 # SOFTWARE.
 #
 #
+
+set(ARCDVI_VERSION 0.1)
+
 cmake_minimum_required(VERSION 3.13)
 
 # initialize the SDK based on PICO_SDK_PATH
@@ -47,6 +50,7 @@ if (TARGET tinyusb_device)
     commands.c
     video.c
     vidc_regs.c
+    version.h
     )
 
   target_link_libraries(firmware pico_stdlib hardware_i2c hardware_spi)
@@ -56,6 +60,12 @@ if (TARGET tinyusb_device)
 
   # Needed for UF2:
   pico_add_extra_outputs(firmware)
+
+  add_custom_command(
+    OUTPUT version.h
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tools/mkversion ${CMAKE_CURRENT_SOURCE_DIR}/version.h ${ARCDVI_VERSION}
+    DEPENDS tools/mkversion
+    )
 
 elseif(PICO_ON_DEVICE)
    message(WARNING "not building firmware because TinyUSB submodule is not initialized in the SDK")

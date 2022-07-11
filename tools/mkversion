@@ -1,0 +1,31 @@
+#!/bin/bash
+
+OUTF=$1
+RVER=$2
+
+if [ -z $OUTF ] ; then
+   echo "$0 <outfile> [<release version>]"
+   exit 1
+fi
+
+if [ -z $RVER ] ; then
+   RVER="0.0"
+fi
+
+GITV=`git rev-parse --short HEAD`
+BT=`date`
+
+GST=`git status --porcelain | grep -v "??"`
+
+if [ ! -z "$GST" ] ; then
+   GITV="${GITV}-dirty"
+fi
+
+echo "#ifndef VERSION_H" > $OUTF
+echo -e "#define VERSION_H\n" >> $OUTF
+
+echo "#define BUILD_TIME        \"${BT}\"" >> $OUTF
+echo "#define BUILD_SHA         \"${GITV}\"" >> $OUTF
+echo "#define BUILD_VERSION     \"${RVER}\"" >> $OUTF
+
+echo -e "\n#endif" >> $OUTF

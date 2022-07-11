@@ -30,6 +30,7 @@
 #include <ctype.h>
 #include "pico/stdlib.h"
 
+#include "version.h"
 #include "commands.h"
 #include "vidc_regs.h"
 #include "video.h"
@@ -160,6 +161,18 @@ static int get_addr_len(char **args, unsigned int *addr, unsigned int *len)
 
 /*****************************************************************************/
 /* Commands */
+
+static void cmd_version(char *args)
+{
+        printf("     _             ______     _____ \r\n"
+               "    / \\   _ __ ___|  _ \\ \\   / /_ _|\r\n"
+               "   / _ \\ | '__/ __| | | \\ \\ / / | | \r\n"
+               "  / ___ \\| | | (__| |_| |\\ V /  | | \r\n"
+               " /_/   \\_\\_|  \\___|____/  \\_/  |___|\r\n");
+
+	printf("  version " BUILD_VERSION " (" BUILD_SHA "), built " BUILD_TIME "\r\n");
+        /* FIXME: Dump FPGA version */
+}
 
 static void cmd_vtx(char *args)
 {
@@ -298,6 +311,9 @@ static cmd_t commands[] = {
         { .format = "?",
           .help = 0,
           .handler = cmd_help },
+        { .format = "ver",
+          .help = "ver\t\t\t\t\t\tPrint build version information",
+          .handler = cmd_version },
         { .format = "vtx",
           .help = "vtx <xpix> <fp> <sync width> <bp> <dma wpl-1>\tSet X video timing",
           .handler = cmd_vtx },
