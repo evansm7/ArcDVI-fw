@@ -188,9 +188,19 @@ static int      video_guess_hires(unsigned int x, unsigned int y, unsigned int b
 
 void    video_probe_mode(void)
 {
-        static const unsigned int pix_rates[] = { 8, 12, 16, 24 };
+        const unsigned int pix_rates[] = { 8, 12, 16, 24 };
 
         video_wait_flybk();
+
+        static unsigned int prev_xres = ~0;
+        static unsigned int prev_yres = ~0;
+        static unsigned int prev_xfp = ~0;
+        static unsigned int prev_xsw = ~0;
+        static unsigned int prev_xbp = ~0;
+        static unsigned int prev_yfp = ~0;
+        static unsigned int prev_ysw = ~0;
+        static unsigned int prev_ybp = ~0;
+        static unsigned int prev_wpl = ~0;
 
         // fp is dispend to frame (sync start)
         // bo is dispstart-syncwidth
@@ -221,13 +231,42 @@ void    video_probe_mode(void)
         unsigned int hires = 0;
         unsigned int dx = 0, dy = 0;
 
-        printf("New mode %dx%d, %dbpp:\r\n"
-                "\thfp %d, hsw %d, hbp %d (%d total)\r\n"
-                "\tvfp %d, vsw %d, vbp %d (%d total, frame %dHz pclk %dMHz)\r\n",
-                xres, yres, 1 << bpp,
-                xfp, xsw, xbp, xres + xfp + xsw + xbp,
-                yfp, ysw, ybp, yres + yfp + ysw + ybp,
-                pix_rate*1000000 / (hcr * vcr), pix_rate);
+        if (xres != prev_xres || yres != prev_yres ||
+            xfp != prev_xfp || xsw != prev_xsw || xbp != prev_xbp ||
+            yfp != prev_yfp || ysw != prev_ysw || ybp != prev_ybp ||
+            wpl != prev_wpl) {
+                printf("New mode %dx%d, %dbpp:\r\n"
+                       "\thfp %d, hsw %d, hbp %d (%d total)\r\n"
+                       "\tvfp %d, vsw %d, vbp %d (%d total, frame %dHz pclk %dMHz)\r\n",
+                       xres, yres, 1 << bpp,
+                       xfp, xsw, xbp, xres + xfp + xsw + xbp,
+                       yfp, ysw, ybp, yres + yfp + ysw + ybp,
+                       pix_rate*1000000 / (hcr * vcr), pix_rate);
+
+                prev_xres = xres;
+                prev_yres = yres;
+                prev_xfp = xfp;
+                prev_xsw = xsw;
+                prev_xbp = xbp;
+                prev_yfp = yfp;
+                prev_ysw = ysw;
+                prev_ybp = ybp;
+                prev_wpl = wpl;
+        } else {
+                /* Don't reprogram the video output unless we're really doing something different,
+                 * because the monitor will spend a second or two to regain sync and
+                 * bootup messages will be missed.
+                 */
+                printf("Config changed, but equals existing mode %dx%d, %dbpp:\r\n"
+                       "\thfp %d, hsw %d, hbp %d (%d total)\r\n"
+                       "\tvfp %d, vsw %d, vbp %d (%d total, frame %dHz pclk %dMHz)\r\n",
+                       xres, yres, 1 << bpp,
+                       xfp, xsw, xbp, xres + xfp + xsw + xbp,
+                       yfp, ysw, ybp, yres + yfp + ysw + ybp,
+                       pix_rate*1000000 / (hcr * vcr), pix_rate);
+
+                return;
+        }
 
         // Now, some dumb heuristics to try to program a matching output mode:
         // 1. Is it a highres mode?
