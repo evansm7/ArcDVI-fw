@@ -31,6 +31,9 @@ include(pico_sdk_import.cmake)
 
 project(firmware)
 
+set(PICO_BOARD arcdvi)
+set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
+
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
 
