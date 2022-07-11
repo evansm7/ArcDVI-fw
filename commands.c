@@ -34,6 +34,7 @@
 #include "commands.h"
 #include "vidc_regs.h"
 #include "video.h"
+#include "fpga.h"
 
 
 extern uint8_t flag_autoprobe_mode;
@@ -299,6 +300,66 @@ static void cmd_autoprobe(char *args)
         printf("Autoprobe is %s\r\n", flag_autoprobe_mode ? "on" : "off");
 }
 
+static void cmd_read_reg(char *args)
+{
+        int OKa;
+        unsigned int addr;
+
+        addr = atoh(args, &args, &OKa);
+        addr &= 0xfff;
+        if (!OKa) {
+                printf("\r\n Syntax error, arg 1\r\n");
+        } else {
+                uint32_t db = ~0;
+                printf("  %08x\t= %08x\r\n", addr, fpga_read32(addr));
+        }
+}
+
+static void cmd_write_reg(char *args)
+{
+        int OK;
+        unsigned int addr, data;
+
+        addr = atoh(args, &args, &OK);
+        addr &= 0xfff;
+        if (!OK) {
+                printf("\r\n Syntax error, arg 1\r\n");
+        } else {
+                args = skipwhitespace(args);
+                data = atoh(args, &args, &OK);
+                if (!OK) {
+                        printf("\r\n Syntax error, arg 2\r\n");
+                        return;
+                }
+
+                fpga_write32(addr, data);
+                printf("  [%08x]\t<= %08x\r\n", addr, data);
+        }
+}
+
+static void dump_regs(unsigned int r, unsigned int len)
+{
+        const int wordsPerLine = 8;
+
+        for (unsigned int n = r; n < r+len; n++) {
+                if ((n & (wordsPerLine-1)) == 0) {
+                        printf("  %08x: ", n*4);
+                }
+                printf("%08x ", fpga_read32(n));
+
+                if ((n & (wordsPerLine-1)) == (wordsPerLine-1)) {
+                        printf("\r\n");
+                }
+        }
+}
+
+static void cmd_dump_regs(char *args)
+{
+        printf("VIDC regs:\r\n");
+        dump_regs(0, 128);
+        printf("Video regs:\r\n");
+        dump_regs(0x800, 16);
+}
 
 /*****************************************************************************/
 
@@ -339,6 +400,15 @@ static cmd_t commands[] = {
         { .format = "a",
           .help = "a\t\t\t\t\t\tToggle mode autoprobing",
           .handler = cmd_autoprobe },
+        { .format = "rr",
+          .help = "rr <addr>\t\t\t\t\tRead FPGA register",
+          .handler = cmd_read_reg },
+        { .format = "wr",
+          .help = "wr <addr> <u32>\t\t\t\tWrite FPGA register",
+          .handler = cmd_write_reg },
+        { .format = "dr",
+          .help = "dr\t\t\t\t\tDump FPGA register space",
+          .handler = cmd_dump_regs },
 };
 
 static int num_commands = sizeof(commands)/sizeof(cmd_t);
