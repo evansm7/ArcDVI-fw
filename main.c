@@ -29,16 +29,45 @@
 #include "pico/stdlib.h"
 
 #include "fpga.h"
+#include "hw.h"
 #include "dvo.h"
+#include "vidc_regs.h"
+#include "commands.h"
+#include "video.h"
+
+
+/******************************************************************************/
 
 extern uint8_t fpga_bitstream[];
 extern unsigned int fpga_bitstream_length;
+uint8_t flag_autoprobe_mode = 1;
+
+/******************************************************************************/
+
+static void     vidc_config_poll(void)
+{
+        uint32_t s = fpga_read32(FPGA_VO(VIDO_REG_SYNC));
+
+        int status = !!(s & 8);
+        int ack = !!(s & 4);
+
+        if (status != ack) {
+                // FIXME: Delay a frame or so, so that all writes have Probably Happened
+                printf("<VIDC RECONFIG %08x>\r\n", s);
+                fpga_write32(FPGA_VO(VIDO_REG_SYNC), s ^ 4); // Flip ack, enables further detection.
+
+                if (flag_autoprobe_mode)
+                        video_probe_mode();
+        }
+}
 
 int main()
 {
 	stdio_init_all();
 
 	printf("OHAI\n");
+
+        cmd_init();
 
         fpga_init();
         printf("FPGA: Bitstream %d bytes at %p, programming:\n",
@@ -50,11 +79,15 @@ int main()
 
         dvo_init();
 
-        int i = 0;
-	while (true) {
-                printf("Hello %d\n", i++);
-                sleep_ms(2500);
-	}
+        /* Active hot-spinning loop to poll various services (monitor regs,
+         * interactive UART IO, update OSD, etc.)
+         */
+        while (1) {
+                /* Poll user IO */
+                cmd_poll();
+
+                vidc_config_poll();
+        }
 
 	return 0;
 }

@@ -44,6 +44,9 @@ if (TARGET tinyusb_device)
     # In future, conditionally include a driver corresponding to HW reqs:
     dvo_tda19988.c
     fpga_bitstream.S
+    commands.c
+    video.c
+    vidc_regs.c
     )
 
   target_link_libraries(firmware pico_stdlib hardware_i2c hardware_spi)

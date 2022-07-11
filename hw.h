@@ -1,5 +1,5 @@
-#ifndef FW_H
-#define FW_H
+#ifndef HW_H
+#define HW_H
 
 /* MCU GPIOs */
 
@@ -43,5 +43,11 @@
 /* Misc */
 #define MCU_A1                  24
 #define MCU_A2                  25
+
+
+/* FPGA addresses */
+
+#define FPGA_VIDC(x)            (0x000 + (x))
+#define FPGA_VO(x)              (0x800 + (x))
 
 #endif
