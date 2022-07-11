@@ -29,7 +29,7 @@
 #include "pico/stdlib.h"
 
 #include "fpga.h"
-#include "video.h"
+#include "dvo.h"
 
 extern uint8_t fpga_bitstream[];
 extern unsigned int fpga_bitstream_length;
@@ -48,7 +48,7 @@ int main()
 
         sleep_ms(10);
 
-        video_init();
+        dvo_init();
 
         int i = 0;
 	while (true) {

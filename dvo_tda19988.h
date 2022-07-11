@@ -1,5 +1,5 @@
-#ifndef VIDEO_TDA19988_H
-#define VIDEO_TDA19988_H
+#ifndef DVO_TDA19988_H
+#define DVO_TDA19988_H
 
 /* Register and magic number definitions for TDA19988 */
 

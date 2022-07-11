@@ -1,8 +1,8 @@
-#ifndef VIDEO_H
-#define VIDEO_H
+#ifndef DVO_H
+#define DVO_H
 
 /* Interface to video serialiser driver(s) */
 
-int     video_init();
+int     dvo_init();
 
 #endif
