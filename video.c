@@ -280,6 +280,7 @@ void    video_probe_mode(void)
                 printf("Guessed hires mono mode.\r\n");
 
                 xres *= 4;
+#ifdef LEGACY_78M_CLEVER_HACK_FOR_POSTERITY
                 // Recalculate horizontal timing to match same period for 78MHz vs 96MHz:
                 unsigned int total_width78 = hcr*4*78/96;
 
@@ -293,6 +294,15 @@ void    video_probe_mode(void)
                 xfp = total_width78 / 20;
                 xsw = total_width78 / 40;
                 xbp = total_width78-xres-xfp-xsw;
+#else
+                /* ArcDVI can do a 96MHz pixel clock, so output VIDC/RISC OS timings
+                 * directly.  Whether your monitor likes 'em is another matter, as they're
+                 * not quite VESA, but "works for me".
+                 */
+                xfp *= 4;
+                xsw *= 4;
+                xbp *= 4;
+#endif
                 // vertical timing stays the same.
                 hires = 1;
                 bpp = 0;
