@@ -49,5 +49,16 @@
 
 #define FPGA_VIDC(x)            (0x000 + (x))
 #define FPGA_VO(x)              (0x800 + (x))
+#define FPGA_CTRL(x)            (0xc00 + (x))
+
+#define CTRL_ID                 0
+#define CTRL_REG                1
+#define         CR_RESET        0x01
+#define         CR_PLL_NRESET   0x02
+#define         CR_PLL_CLK      0x04
+#define         CR_PLL_DATA     0x08
+#define         CR_PLL_DATAO    0x10    /* R/O */
+#define         CR_PLL_LOCK     0x20    /* R/O */
+#define         CR_PLL_BYPASS   0x40
 
 #endif

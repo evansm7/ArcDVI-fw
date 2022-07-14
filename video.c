@@ -36,6 +36,144 @@
 #define VR(x)           fpga_read32(FPGA_VO(x))
 #define VW(x, val)      fpga_write32(FPGA_VO(x), val)
 
+#define CRR()           fpga_read32(FPGA_CTRL(CTRL_REG))
+#define CRW(val)        fpga_write32(FPGA_CTRL(CTRL_REG), val)
+
+void    video_init()
+{
+        int i;
+        /* Set up PLL */
+        /* Assert logic reset & PLL reset: */
+        CRW(CR_RESET);
+        sleep_ms(1);
+        /* Take PLL out of reset */
+        CRW(CR_RESET | CR_PLL_NRESET);
+        sleep_ms(1);
+        /* Wait for lock */
+        for (i = 0; i < 1000; i++) {
+                if (CRR() & CR_PLL_LOCK)
+                        break;
+                sleep_ms(1);
+        }
+        if (i == 1000)
+                printf("*** WARNING *** PLL lock timeout (CR %08x)\r\n", CRR());
+        /* Release logic reset */
+        CRW(CR_PLL_NRESET);
+}
+
+/* Dynamically reconfigure the output pixel clock rate:
+ *
+ * Parameter is multiplication factor times 10, i.e.
+ * 10, 15, 20, 40 for the standard 1x, 1.5x, 2x, 4x rates.
+ */
+static void     video_pclk_mult(unsigned int factor)
+{
+#define RECONFIGURE_PLL_COEFFS yes
+#ifdef RECONFIGURE_PLL_COEFFS
+        const int cfg_bits = 26;
+        uint32_t cfg = (1 << 25) | (0 << 23) | (1 << 22) | (0 << 19);
+
+        /* From Yosys's documentation, for ICE40HX the word consists of:
+         * [   25] FSEnet                               1 (Simple)
+         * [24:23] pllout1Sel                           0 (Genclk. doc'd 2 but only 0 works)
+         * [   22] Source Clock (0=Pad, 1=Fabric)       1 (fabric)
+         * [   21] ShiftReg[0]                          0 (Mode 0, not used)
+         * [20:19] pllout2Sel                           0 (Genclk, doc'd 2 but only 0 works)
+         * [18:17] delaymuxsel                          0 (Delay)
+         * [16:14] FILTER_RANGE
+         * [13:11] DIVQ
+         * [10: 4] DIVF
+         * [ 3: 0] DIVR
+         *
+         * MSB-first, at rising SCLK edge.
+         */
+
+        /* Supported factors 1, 4.
+         * FIXME: calculate coefficients, rather than using potted
+         * values.
+         */
+        if (factor == 40) {
+                /* x4 */
+                cfg |= 0;               /* DIVR */
+                cfg |= 31 << 4;         /* DIVF */
+                cfg |= 3 << 11;         /* DIVQ */
+                cfg |= 2 << 14;         /* FILTER_RANGE */
+        } else if (factor == 20) {
+                cfg |= 0;               /* DIVR */
+                cfg |= 31 << 4;         /* DIVF */
+                cfg |= 4 << 11;         /* DIVQ */
+                cfg |= 2 << 14;         /* FILTER_RANGE */
+        } else if (factor == 15) {
+                cfg |= 0;               /* DIVR */
+                cfg |= 23 << 4;         /* DIVF */
+                cfg |= 4 << 11;         /* DIVQ */
+                cfg |= 2 << 14;         /* FILTER_RANGE */
+        } else {
+                if (factor != 10) {
+                        printf("*** Pclk multiplication factor %d not supported!\n",
+                               factor);
+                }
+                /* x1 */
+                cfg |= 0;               /* DIVR */
+                cfg |= 31 << 4;         /* DIVF */
+                cfg |= 5 << 11;         /* DIVQ */
+                cfg |= 2 << 14;         /* FILTER_RANGE */
+        }
+
+        printf("Setting PLL config %08x (mult factor %d.%d): real pclk %d MHz\r\n",
+               cfg, factor/10, factor % 10, 24*factor/10);
+        /* Update PLL configuration:
+         * 1. Hold video logic in RESET
+         * 2. Assert PLL reset
+         * 3. Shift in new config
+         * 4. Release PLL reset
+         * 5. Wait for lock
+         * 6. Release video logic RESET
+         */
+        CRW(CR_RESET | CR_PLL_NRESET);  /* Logic reset (while clock's still running) */
+        sleep_us(10);
+        CRW(CR_RESET);                  /* PLL reset also */
+
+        /* Clock and Data are 0 */
+        for (int i = 0; i < cfg_bits; i++) {
+                uint32_t x = CR_RESET;
+                if (cfg & (1 << (cfg_bits-1))) {
+                        x |= CR_PLL_DATA;
+                }
+                cfg <<= 1;
+                CRW(x);
+                sleep_us(100);                  /* Setüp */
+                CRW(x | CR_PLL_CLK);
+                sleep_us(100);                  /* Holdé */
+                CRW(x);
+                sleep_us(100);
+        }
+        /* Release PLL reset */
+        CRW(CR_RESET | CR_PLL_NRESET);
+        sleep_ms(1);
+
+        /* Wait for lock */
+        int i;
+        for (i = 0; i < 1000; i++) {
+                if (CRR() & CR_PLL_LOCK)
+                        break;
+                sleep_ms(1);
+        }
+        if (i == 1000)
+                printf("*** WARNING *** PLL lock timeout (CR %08x)\r\n", CRR());
+        /* Release logic reset */
+        CRW(CR_PLL_NRESET);
+#else
+        uint32_t f = (factor == 2) ? 0 : CR_PLL_BYPASS;
+        /* Cheap version: use bypass mux to get 1:1 or 1:4 */
+        CRW(CR_RESET | CR_PLL_NRESET);          /* Logic reset */
+        sleep_us(10);
+        CRW(f | CR_RESET | CR_PLL_NRESET);      /* Switch clock */
+        sleep_us(10);
+        CRW(f | CR_PLL_NRESET);                 /* Out of reset */
+#endif
+}
+
 void    video_sync(void)
 {
         uint32_t s = VR(VIDO_REG_SYNC);
@@ -192,6 +330,9 @@ void    video_probe_mode(void)
 
         video_wait_flybk();
 
+        printf("CR = %08x, ID = %08x\r\n", fpga_read32(FPGA_CTRL(CTRL_REG)),
+               fpga_read32(FPGA_CTRL(CTRL_ID)));
+
         static unsigned int prev_xres = ~0;
         static unsigned int prev_yres = ~0;
         static unsigned int prev_xfp = ~0;
@@ -217,6 +358,13 @@ void    video_probe_mode(void)
         unsigned int vsw = (vidc_reg(VIDC_V_SYNC) >> 14)+1;
         unsigned int vdsr = (vidc_reg(VIDC_V_DISP_START) >> 14)+1;
         unsigned int vder = (vidc_reg(VIDC_V_DISP_END) >> 14)+1;
+
+        /* Note: hder observed to be zero ... when RISCiX programs a high-res mode.
+         */
+        if (hder == 0) {        /* HACK!!! */
+                hder = hdsr + 288;
+                printf("*** HDER was 0, hacking to +288\r\n");
+        }
 
         unsigned int xres = hder - hdsr;
         unsigned int yres = vder - vdsr;
@@ -259,7 +407,7 @@ void    video_probe_mode(void)
                  */
                 printf("Config changed, but equals existing mode %dx%d, %dbpp:\r\n"
                        "\thfp %d, hsw %d, hbp %d (%d total)\r\n"
-                       "\tvfp %d, vsw %d, vbp %d (%d total, frame %dHz pclk %dMHz)\r\n",
+                       "\tvfp %d, vsw %d, vbp %d (%d total, frame %dHz pclk %dMHz)\r\n\r\n",
                        xres, yres, 1 << bpp,
                        xfp, xsw, xbp, xres + xfp + xsw + xbp,
                        yfp, ysw, ybp, yres + yfp + ysw + ybp,
@@ -310,48 +458,81 @@ void    video_probe_mode(void)
 
                 cx = 0x12c; // FIXME: derive this from ... something! ;(
 
+                video_pclk_mult(40); /* 24*4=96MHz */
         } else if (xres >= 640 && yres >= 480) {
                 // Defaults above are good!
 
+                video_pclk_mult(10);
         } else if (xres >= 640 && yres < 480) {
                 /* We'll want some Y doublin'.  Slightly more complicated now,
-                 * because we need to recalculate the horiz timing to fit a 24MHz pclk
+                 * because we need to recalculate the horiz timing to fit a 24MHz*X pclk
                  * instead of the input one.  Specifically, we output the line twice
                  * but need to keep the same vertical timing, which means we need to output
                  * it twice as fast horizontally.  This is done by always using a 24MHz
                  * output clock and changing the blanking time.
                  *
-                 * Note, not all modes will succeed here:
+                 * Not all modes can simply be doubled:
                  * - Maybe the mode is already using a 24MHz pclk (e.g. mode 37),
                  *   meaning we can't output the input line at 2x the rate
                  * - Or, the mode is <24 (e.g. 16MHz) but so wide that we can't output
                  *   enough pixels at 24MHz to keep within the line period.
                  *
+                 * We attempt to resolve this by testing at increasing output
+                 * pixel clock rates; first 1x (24MHz), then 1.5x (36MHz), then 2x (48MHz).
+                 * Most modes (including the wide ones) fit this method.
+                 *
+                 * Some modes will end up a weird geometry (mode 37 would be 896x704)
+                 * which monitors may still not like.  FIXME:  Possible to add borders
+                 * and/or stretch DE to accommodate these.
+                 *
                  * The fallback is outputting the mode non-doubled, which will likely
                  * not work (monitors/TVs seem to like 400-ish lines at a minimum).
                  *
-                 * Longer-term FIXME by changing to a higher output pclk (e.g. 48MHz).
                  */
 
-                /* We need exactly 1/2 of the original line period, but with a
-                 * 24MHz clock:
-                 */
-                unsigned int new_total_width = hcr*24/pix_rate/2;
+                const int test_rate[] = {24, 36, 48};
 
-                /* Being too skimpy on H-blank time upsets many monitors, so
-                 * refuse to go into such a mode:
-                 */
-                unsigned int minimum_h_blanking = xres / 32; // Art not science
-
-                if (pix_rate == 24 || (new_total_width < (xres + minimum_h_blanking))) {
-                        printf("*** Can't line-double this mode! "
-                                "(%d MHz, width %d (min %d) ***\r\n",
-                                pix_rate, new_total_width, xres + minimum_h_blanking);
-                        /* Fall through, and set this mode verbatim, maybe
-                         * the display can cope with it directly.
+                unsigned int pclk = 0;
+                unsigned int new_total_width = 0;
+                for (int i = 0; i < 3; i++) {
+                        pclk = test_rate[i];
+                        /* We need exactly 1/2 of the original line period, but with a
+                         * new clock:
                          */
-                } else {
+                        new_total_width = hcr*pclk/pix_rate/2;
 
+                        /* Being too skimpy on H-blank time upsets many monitors, so
+                         * refuse to go into such a mode:
+                         */
+                        const unsigned int minimum_h_blanking = xres / 32; // Art not science
+
+                        printf("*** pclk %dMHz: hcr %d, new_width %d, xres %d, min_h %d\r\n",
+                               pclk, hcr, new_total_width, xres, minimum_h_blanking);
+                        // FIXME: try to find the lowest pclk that will
+                        // work; try 36, 48 (mind you, what's 48 good for?)
+                        if (new_total_width < (xres + minimum_h_blanking)) {
+                                printf("*** Can't line-double this mode with %dMHz pclk "
+                                       "(%d MHz, width %d (min %d), trying next clock.\r\n",
+                                       pclk, pix_rate, new_total_width, xres + minimum_h_blanking);
+
+                                if (pclk == 48) {
+                                        printf("*** Giving up, can't line-double this mode! "
+                                               "(%d MHz, output pclk %d MHz, width %d (min %d) ***\r\n",
+                                               pix_rate, pclk, new_total_width, xres + minimum_h_blanking);
+                                        /* Fall through, and set this mode verbatim, maybe
+                                         * the display can cope with it directly.
+                                         */
+                                        pclk = 0;
+                                        break;
+                                }
+                                /* Else loop, and try the next one up */
+                        } else {
+                                /* This pclk rate works for us. */
+                                break;
+                        }
+                }
+
+                if (pclk != 0) {
                         yres *= 2;
                         yfp *= 2;
                         ysw *= 2;
@@ -362,9 +543,13 @@ void    video_probe_mode(void)
                         xsw = new_total_width / 40;
                         xbp = new_total_width-xres-xfp-xsw;
 
-                        printf("Y-doubled: new width %d, fp %d, xsw %d, bp %d\r\n",
+                        printf("*** Y-doubled: new width %d, fp %d, xsw %d, bp %d\r\n",
                                 new_total_width, xfp, xsw, xbp);
                         dy = 1;
+                        video_pclk_mult(10*pclk/24);
+                } else {
+                        /* Give-up case, outputing mode 1:1 */
+                        video_pclk_mult(10);
                 }
         } else if (xres < 640 && yres < 480) {
                 /* We'll want both X and Y doublin'.  This'll generally work unless
@@ -388,11 +573,12 @@ void    video_probe_mode(void)
                         xsw = new_total_width / 40;
                         xbp = new_total_width-xres-xfp-xsw;
 
-                        printf("XY-doubled: new width %d, fp %d, xsw %d, bp %d\r\n",
+                        printf("*** XY-doubled: new width %d, fp %d, xsw %d, bp %d\r\n",
                                 new_total_width, xfp, xsw, xbp);
                         dx = 1;
                         dy = 1;
                 }
+                video_pclk_mult(10);
         }
 
         VW(VIDO_REG_RES_X, xres | (dx ? 0x80000000 : 0));
@@ -407,6 +593,8 @@ void    video_probe_mode(void)
         VW(VIDO_REG_CTRL, cx | (hires ? 0x80000000 : 0) | (bpp << 28));
 
         video_sync();
+
+        printf("\r\n");
 }
 
 void    video_dump_timing_regs(void)

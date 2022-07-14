@@ -68,6 +68,7 @@
  * 10:0         Cursor X offset
  */
 
+void    video_init(void);
 void    video_sync(void);
 void    video_setmode(int mode);
 void    video_probe_mode(void);

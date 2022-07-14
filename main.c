@@ -79,6 +79,7 @@ int main()
         sleep_ms(10);
 
         dvo_init();
+        video_init();
 
         /* Active hot-spinning loop to poll various services (monitor regs,
          * interactive UART IO, update OSD, etc.)
