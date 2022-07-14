@@ -250,20 +250,6 @@ fail:
         video_set_y_timing(yres, fp, width, bp);
 }
 
-static void cmd_setmode(char *args)
-{
-        int OK;
-        unsigned int mode;
-
-        mode = atoh(args, &args, &OK);
-        if (!OK) {
-                printf("\r\n Syntax error in arg\r\n");
-                return;
-        }
-
-        video_setmode(mode);
-}
-
 static void cmd_vt(char *args)
 {
         video_dump_timing_regs();
@@ -388,9 +374,6 @@ static cmd_t commands[] = {
         { .format = "v",
           .help = "v\t\t\t\t\t\tDump VIDC regs",
           .handler = cmd_vidc_dump },
-        { .format = "m",
-          .help = "m <mode>\t\t\t\t\tSet mode (arc number)",
-          .handler = cmd_setmode },
         { .format = "cc",
           .help = "cc <cursor x offset>\t\t\t\tSet cursor x offset",
           .handler = cmd_cursorctrl },

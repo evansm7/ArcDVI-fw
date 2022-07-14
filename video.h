@@ -70,7 +70,6 @@
 
 void    video_init(void);
 void    video_sync(void);
-void    video_setmode(int mode);
 void    video_probe_mode(void);
 void    video_dump_timing_regs(void);
 void    video_set_x_timing(unsigned int xres, unsigned int fp, unsigned int sw,

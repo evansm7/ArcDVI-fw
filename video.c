@@ -190,114 +190,6 @@ void    video_sync(void)
         printf("Timeout :(  (reg %02x)\r\n", s);
 }
 
-/* These modes are largely incorrect, but were useful for playing around with variants.
- */
-void    video_setmode(int mode)
-{
-        unsigned int xres, xfp, xwidth, xbp;
-        unsigned int yres, yfp, ywidth, ybp;
-        unsigned int wpl;
-        unsigned int cx;
-        unsigned int bpp;
-        unsigned int hires = 0;
-        unsigned int dx = 0, dy = 0;
-
-        switch (mode) {
-        case 23: { // Equivalent to mode 23 (see comments in RTL, 78MHz pclk => 1274 total width
-                xres = 1152;    xfp = 40;       xwidth = 20;    xbp = 1274-xres-xfp-xwidth;
-                yres = 896;     yfp = 4;        ywidth = 3;     ybp = 950-yres-yfp-ywidth;
-                wpl = 36-1;     cx = 0x12c;     hires = 1;
-                bpp = 0;
-        } break;
-
-        case 25:
-        case 26:
-        case 27:
-        case 28: { // ~Exactly matches mode 25 (24MHz pclk, 1bpp)
-                xres = 640;     xfp = 34;       xwidth = 96;    xbp = 800-xres-xfp-xwidth;
-                yres = 480;     yfp = 11;       ywidth = 1;     ybp = 525-yres-yfp-ywidth;
-                // This magic pointer offset seems constant across BPP, and HDSR value...
-                cx = 137; // Note, this is ((HDSR*2)+19)-6
-
-                bpp = mode-25; // 0-3 for 1bpp-8bpp
-                wpl = (640/(32>>bpp))-1;
-        } break;
-
-        case 21:
-        case 20:
-        case 19:
-        case 18: { // 24MHz
-                xres = 640;     xfp = 87;       xwidth = 56;    xbp = 896-xres-xfp-xwidth;
-                yres = 512;     yfp = 1;        ywidth = 3;     ybp = 534-yres-yfp-ywidth;
-                bpp = mode-18; // 0-3 for 1bpp-8bpp
-                wpl = (640/(32>>bpp))-1;
-                cx = (0x52*2)+5-6;
-        } break;
-
-        case 0:
-        case 8:
-        case 12:
-        case 15: { // 24MHz, 640x256 line-doubled
-                if (mode == 0) bpp = 0;
-                else if (mode == 8) bpp = 1;
-                else if (mode == 12) bpp = 2;
-                else bpp = 3;
-                /* This mode is very odd-shaped.  We're trying to match exactly 50% of the
-                 * horiz period the arc gives out, except arc uses 16MHz pclk and we're
-                 * using 24MHz.  So, we want a frame 768 wide instead of 1024 (a la mode 20)
-                 * and make the frame very tall (624, 2x 312 lines).
-                 */
-                xres = 640;     xfp = 40;       xwidth = 20;    xbp = 768-xres-xfp-xwidth;
-                yres = 512;     yfp = 40;       ywidth = 5;     ybp = 624-yres-yfp-ywidth;
-                wpl = (640/(32>>bpp))-1;
-                cx = (0x6d*2)+5-6;
-                dy = 1;
-        } break;
-
-        case 4:
-        case 1: // or 5
-        case 9:
-        case 13:
-        case 0xcc: { // 24MHz, 320x256 line-doubled, pixel-doubled
-                if (mode == 4) bpp = 0;
-                else if (mode == 1) bpp = 1;
-                else if (mode == 9) bpp = 2;
-                else if (mode == 13) bpp = 3;
-                else if (mode == 0xcc) bpp = 4; // Magic HICOLOUR 565 mode
-                /* This mode is very odd-shaped.  We're trying to match exactly 50% of the
-                 * horiz period the arc gives out, except arc uses 16MHz pclk and we're
-                 * using 24MHz.  So, we want a frame 768 wide instead of 1024 (a la mode 20)
-                 * and make the frame very tall (624, 2x 312 lines).
-                 */
-                xres = 640;     xfp = 40;       xwidth = 20;    xbp = 768-xres-xfp-xwidth;
-                yres = 512;     yfp = 40;       ywidth = 5;     ybp = 624-yres-yfp-ywidth;
-                wpl = (320/(32>>bpp))-1;
-                cx = 0x68; // shrug
-                dx = 1;
-                dy = 1;
-        } break;
-
-        default:
-                printf("\r\n Unknown mode!\r\n");
-                return;
-        }
-
-        // Set mode, and sync:
-
-        VW(VIDO_REG_RES_X, xres | (dx ? 0x80000000 : 0));
-        VW(VIDO_REG_HS_FP, xfp);
-        VW(VIDO_REG_HS_WIDTH, xwidth);
-        VW(VIDO_REG_HS_BP, xbp);
-        VW(VIDO_REG_RES_Y, yres | (dy ? 0x80000000 : 0));
-        VW(VIDO_REG_VS_FP, yfp);
-        VW(VIDO_REG_VS_WIDTH, ywidth);
-        VW(VIDO_REG_VS_BP, ybp);
-        VW(VIDO_REG_WPLM1, wpl);
-        VW(VIDO_REG_CTRL, cx | (hires ? 0x80000000 : 0) | (bpp << 28));
-
-        video_sync();
-}
-
 void    video_wait_flybk(void)
 {
         /* This waits for a 1-to-0 transition of flyback.
@@ -306,12 +198,12 @@ void    video_wait_flybk(void)
          */
         uint32_t s;
 
-        // Wait for a 1 (might exit immediately):
+        /* Wait for a 1 (might exit immediately): */
         do {
                 s = VR(VIDO_REG_SYNC);
         } while (!(s & 0x10));
 
-        // Wait for a 0:
+        /* Wait for a 0: */
         do {
                 s = VR(VIDO_REG_SYNC);
         } while (s & 0x10);
@@ -320,7 +212,7 @@ void    video_wait_flybk(void)
 static int      video_guess_hires(unsigned int x, unsigned int y, unsigned int bpp,
                                   unsigned int pclk)
 {
-        // Try to guess if this is a hires mode, by very tall high-clock 4BPP modes:
+        /* Try to guess if this is a hires mode; a very tall high-clock 4BPP mode? */
         return (pclk == 24) && (bpp == 2) && (x < (y/2));
 }
 
@@ -343,8 +235,7 @@ void    video_probe_mode(void)
         static unsigned int prev_ybp = ~0;
         static unsigned int prev_wpl = ~0;
 
-        // fp is dispend to frame (sync start)
-        // bo is dispstart-syncwidth
+        /* fp is dispend to frame (sync start); bo is dispstart-syncwidth */
         unsigned int cr = vidc_reg(VIDC_CONTROL);
         unsigned int bpp = (cr >> 2) & 3;
         unsigned int pix_rate = pix_rates[(cr & 3)];
@@ -416,10 +307,11 @@ void    video_probe_mode(void)
                 return;
         }
 
-        // Now, some dumb heuristics to try to program a matching output mode:
-        // 1. Is it a highres mode?
-        // 2. Is it a regular VGA/mode21-like mode?
-        // 3. Otherwise, something needs doubling.
+        /* Now, some dumb heuristics to try to program a matching output mode:
+         * 1. Is it a highres mode?
+         * 2. Is it a regular VGA/mode21-like mode?
+         * 3. Otherwise, something needs doubling.
+         */
 
         if (video_guess_hires(xres, yres, bpp, pix_rate)) {
                 /* Not totally infallible, but definitely works for mode 23 ;-)
@@ -428,21 +320,6 @@ void    video_probe_mode(void)
                 printf("Guessed hires mono mode.\r\n");
 
                 xres *= 4;
-#ifdef LEGACY_78M_CLEVER_HACK_FOR_POSTERITY
-                // Recalculate horizontal timing to match same period for 78MHz vs 96MHz:
-                unsigned int total_width78 = hcr*4*78/96;
-
-                // Check if that was an integer...
-                if (total_width78*96/78/4 != hcr) {
-                        printf("*** Cannot match HR horizontal period! "
-                                "(orig width %d, new width %d) ***\r\n",
-                                hcr, total_width78);
-                        // Oh well.  Carry on and see what it looks like.  ;)
-                }
-                xfp = total_width78 / 20;
-                xsw = total_width78 / 40;
-                xbp = total_width78-xres-xfp-xsw;
-#else
                 /* ArcDVI can do a 96MHz pixel clock, so output VIDC/RISC OS timings
                  * directly.  Whether your monitor likes 'em is another matter, as they're
                  * not quite VESA, but "works for me".
@@ -450,19 +327,21 @@ void    video_probe_mode(void)
                 xfp *= 4;
                 xsw *= 4;
                 xbp *= 4;
-#endif
-                // vertical timing stays the same.
+
+                /* Vertical timing stays the same. */
                 hires = 1;
                 bpp = 0;
                 wpl = (xres/32)-1;
 
-                cx = 0x12c; // FIXME: derive this from ... something! ;(
+                cx = 0x12c; /* FIXME: derive this from ... something! ;( */
 
                 video_pclk_mult(40); /* 24*4=96MHz */
+
         } else if (xres >= 640 && yres >= 480) {
-                // Defaults above are good!
+                /* Use VIDC timing directly */
 
                 video_pclk_mult(10);
+
         } else if (xres >= 640 && yres < 480) {
                 /* We'll want some Y doublin'.  Slightly more complicated now,
                  * because we need to recalculate the horiz timing to fit a 24MHz*X pclk
@@ -504,12 +383,8 @@ void    video_probe_mode(void)
                         /* Being too skimpy on H-blank time upsets many monitors, so
                          * refuse to go into such a mode:
                          */
-                        const unsigned int minimum_h_blanking = xres / 32; // Art not science
+                        const unsigned int minimum_h_blanking = xres / 32; /* Art not science */
 
-                        printf("*** pclk %dMHz: hcr %d, new_width %d, xres %d, min_h %d\r\n",
-                               pclk, hcr, new_total_width, xres, minimum_h_blanking);
-                        // FIXME: try to find the lowest pclk that will
-                        // work; try 36, 48 (mind you, what's 48 good for?)
                         if (new_total_width < (xres + minimum_h_blanking)) {
                                 printf("*** Can't line-double this mode with %dMHz pclk "
                                        "(%d MHz, width %d (min %d), trying next clock.\r\n",
@@ -528,6 +403,8 @@ void    video_probe_mode(void)
                                 /* Else loop, and try the next one up */
                         } else {
                                 /* This pclk rate works for us. */
+                                printf("*** Using pclk %dMHz: hcr %d, new_width %d, xres %d, min_h %d\r\n",
+                                       pclk, hcr, new_total_width, xres, minimum_h_blanking);
                                 break;
                         }
                 }
@@ -538,7 +415,7 @@ void    video_probe_mode(void)
                         ysw *= 2;
                         ybp *= 2;
 
-                        // Synthesise new sync parameters using roughly a 2:1:4 ratio:
+                        /* Synthesise new sync parameters using roughly a 2:1:4 ratio: */
                         xfp = new_total_width / 20;
                         xsw = new_total_width / 40;
                         xbp = new_total_width-xres-xfp-xsw;
@@ -551,6 +428,7 @@ void    video_probe_mode(void)
                         /* Give-up case, outputing mode 1:1 */
                         video_pclk_mult(10);
                 }
+
         } else if (xres < 640 && yres < 480) {
                 /* We'll want both X and Y doublin'.  This'll generally work unless
                  * the mode is a weird custom almost-VGA mode, at 24MHz:
@@ -567,7 +445,7 @@ void    video_probe_mode(void)
                         ysw *= 2;
                         ybp *= 2;
 
-                        // Synthesise new sync parameters using roughly a 2:1:4 ratio:
+                        /* Synthesise new sync parameters using roughly a 2:1:4 ratio: */
                         xres *= 2;
                         xfp = new_total_width / 20;
                         xsw = new_total_width / 40;
