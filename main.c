@@ -45,6 +45,37 @@ uint8_t flag_autoprobe_mode = 1;
 
 /******************************************************************************/
 
+/* There are lots of possibilities for configuration sources, such as
+ * GPIO DIP switches and flash contents, even USB MSD files.
+ *
+ * For now, simple GPIO will do:
+ */
+static void     cfg_init(void)
+{
+        /* Only 1 switch is required at this time. */
+        gpio_init(MCU_CFG1);
+        gpio_set_dir(MCU_CFG1, GPIO_IN);
+        gpio_pull_up(MCU_CFG1);
+        gpio_init(MCU_CFG2);
+        gpio_set_dir(MCU_CFG2, GPIO_IN);
+        gpio_pull_up(MCU_CFG2);
+        gpio_init(MCU_CFG3);
+        gpio_set_dir(MCU_CFG3, GPIO_IN);
+        gpio_pull_up(MCU_CFG3);
+        gpio_init(MCU_CFG4);
+        gpio_set_dir(MCU_CFG4, GPIO_IN);
+        gpio_pull_up(MCU_CFG4);
+}
+
+/* Return config DIP switch values */
+uint32_t        cfg_get(void)
+{
+        return (gpio_get(MCU_CFG1) ? 0 : 1) |
+                (gpio_get(MCU_CFG2) ? 0 : 2) |
+                (gpio_get(MCU_CFG3) ? 0 : 4) |
+                (gpio_get(MCU_CFG4) ? 0 : 8);
+}
+
 static void     vidc_config_poll(void)
 {
         uint32_t s = fpga_read32(FPGA_VO(VIDO_REG_SYNC));
@@ -69,7 +100,7 @@ int main()
 	printf("ArcDVI version " BUILD_VERSION " (" BUILD_SHA "), built " BUILD_TIME "\n");
 
         cmd_init();
-
+        cfg_init();
         fpga_init();
         printf("FPGA: Bitstream %d bytes at %p, programming:\n",
                fpga_bitstream_length, fpga_bitstream);

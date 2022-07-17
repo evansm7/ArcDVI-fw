@@ -41,6 +41,7 @@
  */
 #define VIDO_REG_RES_Y          4
 /* 31           double_y        0 = regular lines, 1 = display y lines twice
+ * 30           Enable CRT-look effect on Y-doubled modes
  * 10:0         y_output_res
 */
 #define VIDO_REG_VS_FP          5

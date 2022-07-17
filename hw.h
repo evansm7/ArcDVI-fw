@@ -40,6 +40,8 @@
 #define MCU_CFG2                26      /* In */
 #define MCU_CFG1                27      /* In */
 
+#define CFG_SW1                 1
+
 /* Misc */
 #define MCU_A1                  24
 #define MCU_A2                  25
@@ -60,5 +62,8 @@
 #define         CR_PLL_DATAO    0x10    /* R/O */
 #define         CR_PLL_LOCK     0x20    /* R/O */
 #define         CR_PLL_BYPASS   0x40
+
+
+extern uint32_t cfg_get();
 
 #endif
