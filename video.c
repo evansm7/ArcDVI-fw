@@ -216,7 +216,7 @@ static int      video_guess_hires(unsigned int x, unsigned int y, unsigned int b
         return (pclk == 24) && (bpp == 2) && (x < (y/2));
 }
 
-void    video_probe_mode(void)
+void    video_probe_mode(bool force)
 {
         const unsigned int pix_rates[] = { 8, 12, 16, 24 };
 
@@ -272,7 +272,7 @@ void    video_probe_mode(void)
         unsigned int hires = 0;
         unsigned int dx = 0, dy = 0;
 
-        if (xres != prev_xres || yres != prev_yres ||
+        if (force || xres != prev_xres || yres != prev_yres ||
             xfp != prev_xfp || xsw != prev_xsw || xbp != prev_xbp ||
             yfp != prev_yfp || ysw != prev_ysw || ybp != prev_ybp ||
             wpl != prev_wpl) {
@@ -496,4 +496,9 @@ void    video_set_y_timing(unsigned int yres, unsigned int fp, unsigned int sw,
 void    video_set_cursor_x(unsigned int offset)
 {
         VW(VIDO_REG_CTRL, (VR(VIDO_REG_CTRL) & ~0x7ff) | (offset & 0x7ff));
+}
+
+void    video_set_ctrl(unsigned int ctrl)
+{
+        VW(VIDO_REG_CTRL, ctrl);
 }

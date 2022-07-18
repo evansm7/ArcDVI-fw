@@ -89,7 +89,7 @@ static void     vidc_config_poll(void)
                 fpga_write32(FPGA_VO(VIDO_REG_SYNC), s ^ 4); // Flip ack, enables further detection.
 
                 if (flag_autoprobe_mode)
-                        video_probe_mode();
+                        video_probe_mode(false);
         }
 }
 

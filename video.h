@@ -71,13 +71,14 @@
 
 void    video_init(void);
 void    video_sync(void);
-void    video_probe_mode(void);
+void    video_probe_mode(bool force);
 void    video_dump_timing_regs(void);
 void    video_set_x_timing(unsigned int xres, unsigned int fp, unsigned int sw,
                            unsigned int bp, unsigned int wpl);
 void    video_set_y_timing(unsigned int yres, unsigned int fp, unsigned int sw,
                            unsigned int bp);
 void    video_set_cursor_x(unsigned int offset);
+void    video_set_ctrl(unsigned int ctrl);
 
 #endif
 

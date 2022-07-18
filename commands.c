@@ -250,6 +250,21 @@ fail:
         video_set_y_timing(yres, fp, width, bp);
 }
 
+static void cmd_vctrl(char *args)
+{
+        int OK;
+        unsigned int ctrl;
+
+        ctrl = atoh(args, &args, &OK);
+        if (!OK) {
+                printf("\r\n Syntax error, arg 0\r\n");
+                goto fail;
+        }
+        video_set_ctrl(ctrl);
+fail:
+        return;
+}
+
 static void cmd_vt(char *args)
 {
         video_dump_timing_regs();
@@ -273,6 +288,11 @@ fail:
 static void cmd_sync(char *args)
 {
         video_sync();
+}
+
+static void cmd_probe(char *args)
+{
+        video_probe_mode(true);
 }
 
 static void cmd_vidc_dump(char *args)
@@ -367,7 +387,9 @@ static cmd_t commands[] = {
         { .format = "vty",
           .help = "vty <ypix> <fp> <sync width> <bp>\t\tSet Y video timing",
           .handler = cmd_vty },
-        /* FIXME: And set res */
+        { .format = "vc",
+          .help = "vc <ctrl>\t\t\t\tSet control reg",
+          .handler = cmd_vctrl },
         { .format = "vt",
           .help = "vt\t\t\t\t\t\tDump video timing",
           .handler = cmd_vt },
@@ -380,6 +402,9 @@ static cmd_t commands[] = {
         { .format = "sync",
           .help = "sync\t\t\t\t\t\tResync display to VIDC",
           .handler = cmd_sync },
+        { .format = "p",
+          .help = "p\t\t\t\t\t\tProbe mode for VIDC timings",
+          .handler = cmd_probe },
         { .format = "a",
           .help = "a\t\t\t\t\t\tToggle mode autoprobing",
           .handler = cmd_autoprobe },
