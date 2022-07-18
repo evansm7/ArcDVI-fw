@@ -344,13 +344,13 @@ void    video_probe_mode(void)
 
                 video_pclk_mult(10);
 
-        } else if (xres >= 640 && yres < 480) {
+        } else if (yres < 480) {
                 /* We'll want some Y doublin'.  Slightly more complicated now,
                  * because we need to recalculate the horiz timing to fit a 24MHz*X pclk
                  * instead of the input one.  Specifically, we output the line twice
                  * but need to keep the same vertical timing, which means we need to output
-                 * it twice as fast horizontally.  This is done by always using a 24MHz
-                 * output clock and changing the blanking time.
+                 * it twice as fast horizontally.  This is done by changing the blanking time,
+                 * and increasing the pixel clock "up one gear" if a lower clock won't fit.
                  *
                  * Not all modes can simply be doubled:
                  * - Maybe the mode is already using a 24MHz pclk (e.g. mode 37),
@@ -370,13 +370,18 @@ void    video_probe_mode(void)
                  * not work (monitors/TVs seem to like 400-ish lines at a minimum).
                  *
                  */
+                const int out_clk_rates[] = {24, 36, 48};
 
-                const int test_rate[] = {24, 36, 48};
+                if (xres < 640) {
+                        /* We want _both_ X and Y doubling. */
+                        dx = 1;
+                        xres *= 2;
+                }
 
                 unsigned int pclk = 0;
                 unsigned int new_total_width = 0;
                 for (int i = 0; i < 3; i++) {
-                        pclk = test_rate[i];
+                        pclk = out_clk_rates[i];
                         /* We need exactly 1/2 of the original line period, but with a
                          * new clock:
                          */
@@ -422,43 +427,16 @@ void    video_probe_mode(void)
                         xsw = new_total_width / 40;
                         xbp = new_total_width-xres-xfp-xsw;
 
-                        printf("*** Y-doubled: new width %d, fp %d, xsw %d, bp %d\r\n",
-                                new_total_width, xfp, xsw, xbp);
+                        printf("*** %s-doubled: new width %d, fp %d, xsw %d, bp %d\r\n",
+                               dx ? "XY" : "Y",
+                               new_total_width, xfp, xsw, xbp);
                         dy = 1;
                         video_pclk_mult(10*pclk/24);
                 } else {
+                        dx = 0;
                         /* Give-up case, outputing mode 1:1 */
                         video_pclk_mult(10);
                 }
-
-        } else if (xres < 640 && yres < 480) {
-                /* We'll want both X and Y doublin'.  This'll generally work unless
-                 * the mode is a weird custom almost-VGA mode, at 24MHz:
-                 */
-                unsigned int new_total_width = hcr*24/pix_rate/2;
-
-                if (pix_rate == 24) {
-                        printf("*** Can't line-double this 24MHz mode! ***\r\n");
-                } else {
-                        wpl = (xres/(32>>bpp))-1;
-
-                        yres *= 2;
-                        yfp *= 2;
-                        ysw *= 2;
-                        ybp *= 2;
-
-                        /* Synthesise new sync parameters using roughly a 2:1:4 ratio: */
-                        xres *= 2;
-                        xfp = new_total_width / 20;
-                        xsw = new_total_width / 40;
-                        xbp = new_total_width-xres-xfp-xsw;
-
-                        printf("*** XY-doubled: new width %d, fp %d, xsw %d, bp %d\r\n",
-                                new_total_width, xfp, xsw, xbp);
-                        dx = 1;
-                        dy = 1;
-                }
-                video_pclk_mult(10);
         }
 
         /* Apply user-configured config (e.g. visual style) */
