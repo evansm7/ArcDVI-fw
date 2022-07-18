@@ -222,10 +222,11 @@ void    video_probe_mode(bool force)
 
         video_wait_flybk();
 
+        uint32_t cfg_sw = cfg_get();
         printf("CR = %08x, ID = %08x, config = %08x\r\n",
                fpga_read32(FPGA_CTRL(CTRL_REG)),
                fpga_read32(FPGA_CTRL(CTRL_ID)),
-               cfg_get());
+               cfg_sw);
 
         static unsigned int prev_xres = ~0;
         static unsigned int prev_yres = ~0;
@@ -440,7 +441,7 @@ void    video_probe_mode(bool force)
         }
 
         /* Apply user-configured config (e.g. visual style) */
-        unsigned int crtlook = !!(cfg_get() & CFG_SW1);
+        unsigned int crtlook = !!(cfg_sw & CFG_SW1);
 
         VW(VIDO_REG_RES_X, xres | (dx ? 0x80000000 : 0));
         VW(VIDO_REG_HS_FP, xfp);
