@@ -66,6 +66,7 @@
 #define VIDO_REG_CTRL           10
 /* 31           HiRes   (1 = in high res mode)
  * 30:28        log2 of bits per pixel (values 0-4 valid)
+ * 27           Extended 256 colour palette
  * 10:0         Cursor X offset
  */
 

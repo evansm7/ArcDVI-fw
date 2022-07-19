@@ -230,6 +230,7 @@ void    video_probe_mode(bool force)
 
         static unsigned int prev_xres = ~0;
         static unsigned int prev_yres = ~0;
+        static unsigned int prev_ext_pal = ~0;
         static unsigned int prev_xfp = ~0;
         static unsigned int prev_xsw = ~0;
         static unsigned int prev_xbp = ~0;
@@ -240,6 +241,8 @@ void    video_probe_mode(bool force)
 
         /* fp is dispend to frame (sync start); bo is dispstart-syncwidth */
         unsigned int cr = vidc_reg(VIDC_CONTROL);
+        unsigned int ext_pal = !!(cr & (1 << 23));
+        unsigned int ext_bpp = !!(cr & (1 << 22));      /* 16BPP */
         unsigned int bpp = (cr >> 2) & 3;
         unsigned int pix_rate = pix_rates[(cr & 3)];
         unsigned int hcr = ((vidc_reg(VIDC_H_CYC) >> 14)*2)+2;
@@ -273,20 +276,35 @@ void    video_probe_mode(bool force)
         unsigned int hires = 0;
         unsigned int dx = 0, dy = 0;
 
+        if (ext_bpp) {
+                /* There's a trick (AKA hack) here.  For 16BPP modes, the VIDC is told
+                 * that the mode is 8BPP and horiz resolution X, whereas the output is really
+                 * 16BPP with horiz resolution X/2.
+                 */
+                bpp = 4;
+                xres /= 2;
+                hcr /= 2;
+                xfp /= 2;
+                xsw /= 2;
+                xbp = hcr - xfp - xsw - xres;
+                pix_rate /= 2;
+        }
+
         if (force || xres != prev_xres || yres != prev_yres ||
             xfp != prev_xfp || xsw != prev_xsw || xbp != prev_xbp ||
             yfp != prev_yfp || ysw != prev_ysw || ybp != prev_ybp ||
-            wpl != prev_wpl) {
-                printf("New mode %dx%d, %dbpp:\r\n"
-                       "\thfp %d, hsw %d, hbp %d (%d total)\r\n"
-                       "\tvfp %d, vsw %d, vbp %d (%d total, frame %dHz pclk %dMHz)\r\n",
-                       xres, yres, 1 << bpp,
-                       xfp, xsw, xbp, xres + xfp + xsw + xbp,
-                       yfp, ysw, ybp, yres + yfp + ysw + ybp,
+            ext_pal != prev_ext_pal || wpl != prev_wpl) {
+                printf("New mode %dx%d, %dbpp%s:\r\n"
+                       "\thfp %d, hsw %d, hbp %d (%d total, hcr %d)\r\n"
+                       "\tvfp %d, vsw %d, vbp %d (%d total, vcr %d, frame %dHz pclk %dMHz)\r\n",
+                       xres, yres, 1 << bpp, ext_pal ? ", extended palette" : "",
+                       xfp, xsw, xbp, xres + xfp + xsw + xbp, hcr,
+                       yfp, ysw, ybp, yres + yfp + ysw + ybp, vcr,
                        pix_rate*1000000 / (hcr * vcr), pix_rate);
 
                 prev_xres = xres;
                 prev_yres = yres;
+                prev_ext_pal = ext_pal;
                 prev_xfp = xfp;
                 prev_xsw = xsw;
                 prev_xbp = xbp;
@@ -299,14 +317,13 @@ void    video_probe_mode(bool force)
                  * because the monitor will spend a second or two to regain sync and
                  * bootup messages will be missed.
                  */
-                printf("Config changed, but equals existing mode %dx%d, %dbpp:\r\n"
+                printf("Config changed, but equals existing mode %dx%d, %dbpp%s:\r\n"
                        "\thfp %d, hsw %d, hbp %d (%d total)\r\n"
                        "\tvfp %d, vsw %d, vbp %d (%d total, frame %dHz pclk %dMHz)\r\n\r\n",
-                       xres, yres, 1 << bpp,
+                       xres, yres, 1 << bpp, ext_pal ? ", extended palette" : "",
                        xfp, xsw, xbp, xres + xfp + xsw + xbp,
                        yfp, ysw, ybp, yres + yfp + ysw + ybp,
                        pix_rate*1000000 / (hcr * vcr), pix_rate);
-
                 return;
         }
 
@@ -452,7 +469,8 @@ void    video_probe_mode(bool force)
         VW(VIDO_REG_VS_WIDTH, ysw);
         VW(VIDO_REG_VS_BP, ybp);
         VW(VIDO_REG_WPLM1, wpl);
-        VW(VIDO_REG_CTRL, cx | (hires ? 0x80000000 : 0) | (bpp << 28));
+        VW(VIDO_REG_CTRL, cx | (hires ? 0x80000000 : 0) | (bpp << 28) |
+           (ext_pal ? 0x08000000 : 0));
 
         video_sync();
 

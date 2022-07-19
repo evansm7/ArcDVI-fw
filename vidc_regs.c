@@ -92,14 +92,16 @@ void            vidc_dumpregs(void)
                (REG(VIDC_V_DISP_END) >> 14) & 0x3ff);
 
         uint32_t ctrl = REG(VIDC_CONTROL);
-        printf("Display control:\t%s%s, %sSync, Interlace %s, DMARq %1x, BPP %d, PixClk %d\r\n",
+        printf("Display control:\t%s%s, %sSync, Interlace %s, DMARq %1x, BPP %d, PixClk %d, palExt %d, bppExt %d\r\n",
                modes[(ctrl >> 14) & 3],
                (ctrl & 0x100) ? ", TM3" : "",
                (ctrl & 0x80) ? "Composite" : "V",
                (ctrl & 0x40) ? "on" : "off",
                (ctrl >> 4) & 3,
                1 << ((ctrl >> 2) & 3),
-               ctrl & 3);
+               ctrl & 3,
+               (ctrl >> 23) & 1,
+               (ctrl >> 22) & 1);
 
         /* Sound */
         printf("Sound:\t\t\tFreq %d, stereo %1x %1x %1x %1x %1x %1x %1x\r\n",
