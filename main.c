@@ -102,6 +102,7 @@ int main()
         cmd_init();
         cfg_init();
         fpga_init();
+
         printf("FPGA: Bitstream %d bytes at %p, programming:\n",
                fpga_bitstream_length, fpga_bitstream);
         int r = fpga_load(fpga_bitstream, fpga_bitstream_length);

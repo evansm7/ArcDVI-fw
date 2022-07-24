@@ -1,5 +1,12 @@
 /* ArcDVI video output control
  *
+ * This code is really the "brains" of the firmware.  The
+ * video_probe_mode function reads the mode programmed by the Arc into
+ * the VIDC registers (from the FPGA), then figures out whether pixel-
+ * or line-doubling is needed, calculates an output mode/pixel clock,
+ * and programs the video output logic in the FPGA.
+ *
+ *
  * Copyright 2021-2022 Matt Evans
  *
  * Permission is hereby granted, free of charge, to any person
