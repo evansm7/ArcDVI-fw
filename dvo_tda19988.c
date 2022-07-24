@@ -32,23 +32,6 @@ static void     vid_i2c_init()
         gpio_pull_up(MCU_VID_SCL);
 }
 
-static void     i2c_scan()
-{
-        printf("--- Bus scan\n");
-        for (unsigned int addr = 0; addr < 128; addr++) {
-                int r;
-                uint8_t rxd;
-
-                printf("%02x: ", addr);
-
-                r = i2c_read_blocking(MCU_VID_I2C, addr, &rxd, 1, false);
-                printf(r < 0 ? "--" : "**");
-
-                printf((addr & 7) == 7 ? "\n" : "   ");
-        }
-        printf("--- Done.");
-}
-
 static int      dvo_reg_write(uint8_t addr, uint8_t reg, uint8_t val)
 {
         uint8_t buff[2];
