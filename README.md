@@ -1,6 +1,6 @@
-# ArcDVI-hw: Digital video output for the Acorn Archimedes
+# ArcDVI-fw: Digital video output for the Acorn Archimedes
 
-25 July 2022
+26 July 2022
 
 ArcDVI is a hardware add-on allowing Acorn Archimedes computers to output video via DVI.  Retrocompute on a _quality_ monitor! :)
 
@@ -39,17 +39,17 @@ Aside from a whole lot of debugging/development features (such as `commands.c` w
 This project is built using the Raspberry Pi Pico SDK.  Configure it like any other pico-sdk project:
 
 ```
-~/ArcDVI-fw$ mkdir build
-~/ArcDVI-fw$ cd build
-~/ArcDVI-fw/build$ cmake .. PICO_SDK_PATH=~/pico-sdk
+[~/ArcDVI-fw]$ mkdir build
+[~/ArcDVI-fw]$ cd build
+[~/ArcDVI-fw/build]$ cmake .. PICO_SDK_PATH=~/pico-sdk
 ...(pico-sdk configures)...
 ```
 
 The FPGA bitstream is embedded into the MCU firmware.  The bitstream must first be built from ArcDVI-hw, and added to the build directory.  The firmware can then be built:
 
 ```
-~/ArcDVI-fw/build$ ln -s ~/ArcDVI-hw/arcdvi-ice40.bit ./fpga.bit
-~/ArcDVI-fw/build$ make
+[~/ArcDVI-fw/build]$ ln -s ~/ArcDVI-hw/arcdvi-ice40.bit ./fpga.bit
+[~/ArcDVI-fw/build]$ make
 ```
 
 The output is `firmware.uf2`.  This is usually programmed by putting the RP2040 into bootloader mode and copying the file to the resulting USB MSD.
