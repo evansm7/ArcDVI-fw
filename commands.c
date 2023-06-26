@@ -35,6 +35,7 @@
 #include "vidc_regs.h"
 #include "video.h"
 #include "fpga.h"
+#include "hw.h"
 
 
 extern uint8_t flag_autoprobe_mode;
@@ -173,6 +174,7 @@ static void cmd_version(char *args)
 
 	printf("  version " BUILD_VERSION " (" BUILD_SHA "), built " BUILD_TIME "\r\n");
         /* FIXME: Dump FPGA version */
+	printf("  FPGA %08x\r\n", fpga_read32(FPGA_CTRL(CTRL_ID)));
 }
 
 static void cmd_vtx(char *args)
@@ -261,6 +263,24 @@ static void cmd_vctrl(char *args)
                 goto fail;
         }
         video_set_ctrl(ctrl);
+fail:
+        return;
+}
+
+static void cmd_led(char *args)
+{
+        int OK;
+        unsigned int en;
+
+        en = atoh(args, &args, &OK);
+        if (!OK) {
+                printf("\r\n Syntax error, arg 0\r\n");
+                goto fail;
+        }
+
+	uint32_t v = fpga_read32(FPGA_CTRL(CTRL_REG));
+	v = (v & ~CR_LED) | (en ? CR_LED : 0);
+	fpga_write32(FPGA_CTRL(CTRL_REG), v);
 fail:
         return;
 }
@@ -390,6 +410,9 @@ static cmd_t commands[] = {
         { .format = "vc",
           .help = "vc <ctrl>\t\t\t\tSet control reg",
           .handler = cmd_vctrl },
+        { .format = "led",
+          .help = "led <0|1>\t\t\t\tSet LED",
+          .handler = cmd_led },
         { .format = "vt",
           .help = "vt\t\t\t\t\t\tDump video timing",
           .handler = cmd_vt },
