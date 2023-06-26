@@ -59,7 +59,7 @@ void    fpga_init()
 {
         FDB("+++ FPGA init\n");
         /* Set up FPGA clk, 125/2=62.5MHz: */
-        clock_gpio_init(MCU_FPGA_CLK, CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_CLK_SYS, 2);
+        clock_gpio_init(MCU_FPGA_CLK, MCU_FPGA_CLK_OUTPUT, 2);
 
         GPIO_INIT_OUT(MCU_FPGA_nRESET);
         gpio_put(MCU_FPGA_nRESET, 0);                   /* Hold in reset */

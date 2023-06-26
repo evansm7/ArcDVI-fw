@@ -52,6 +52,7 @@ uint8_t flag_autoprobe_mode = 1;
  */
 static void     cfg_init(void)
 {
+#ifdef MCU_CFG1
         /* Only 1 switch is required at this time. */
         gpio_init(MCU_CFG1);
         gpio_set_dir(MCU_CFG1, GPIO_IN);
@@ -65,15 +66,20 @@ static void     cfg_init(void)
         gpio_init(MCU_CFG4);
         gpio_set_dir(MCU_CFG4, GPIO_IN);
         gpio_pull_up(MCU_CFG4);
+#endif
 }
 
 /* Return config DIP switch values */
 uint32_t        cfg_get(void)
 {
+#ifdef MCU_CFG1
         return (gpio_get(MCU_CFG1) ? 0 : 1) |
                 (gpio_get(MCU_CFG2) ? 0 : 2) |
                 (gpio_get(MCU_CFG3) ? 0 : 4) |
                 (gpio_get(MCU_CFG4) ? 0 : 8);
+#else
+	return 0;	/* FIXME: Other config methods... */
+#endif
 }
 
 static void     vidc_config_poll(void)

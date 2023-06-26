@@ -28,6 +28,8 @@
 /* MCU GPIOs */
 
 /* FPGA programming/config interface */
+#define HW_VERSION		2
+
 #define MCU_FPGA_nRESET         0       /* Out */
 #define MCU_FPGA_DONE           1       /* In */
 #define MCU_FPGA_IRQ            2       /* In */
@@ -45,12 +47,15 @@
 #define MCU_FPGA_D7             14      /* In/out */
 #define MCU_FPGA_STROBE_IN      15      /* In */
 #define MCU_FPGA_STROBE_OUT     16      /* Out */
-#define MCU_FPGA_CLK            23      /* Out */       /* Clock GPOUT1 */
 
 /* Video serialiser's I2S audio interface */
 #define MCU_VID_I2S_WS          17      /* Out */
 #define MCU_VID_I2S_CLK         18      /* Out */
 #define MCU_VID_I2S_DATA        19      /* Out */
+
+#if (HW_VERSION == 1)
+#define MCU_FPGA_CLK            23      /* Out */       /* Clock GPOUT1 */
+#define MCU_FPGA_CLK_OUTPUT	CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_CLK_SYS
 
 /* Video serialiser config interface */
 #define MCU_VID_IRQ             22      /* In */
@@ -64,12 +69,29 @@
 #define MCU_CFG2                26      /* In */
 #define MCU_CFG1                27      /* In */
 
-#define CFG_SW1                 1
-
 /* Misc */
 #define MCU_A1                  24
 #define MCU_A2                  25
 
+#elif (HW_VERSION == 2)
+
+#define MCU_FPGA_CLK            24      /* Out, GPOUT2 */
+#define MCU_FPGA_CLK_OUTPUT	CLOCKS_CLK_GPOUT1_CTRL_AUXSRC_VALUE_CLK_SYS
+
+/* MCLK on 20, PWM2A */
+
+/* Video serialiser config interface */
+#define MCU_VID_IRQ             21      /* In */
+#define MCU_VID_SDA             22      /* In/out */
+#define MCU_VID_SCL             23      /* Out */
+#define MCU_VID_I2C             i2c1
+
+/* Misc */
+#define MCU_A3_ID_DET           29
+
+#endif
+
+#define CFG_SW1                 1
 
 /* FPGA addresses & registers */
 
@@ -86,6 +108,7 @@
 #define         CR_PLL_DATAO    0x10    /* R/O */
 #define         CR_PLL_LOCK     0x20    /* R/O */
 #define         CR_PLL_BYPASS   0x40
+#define         CR_LED          0x80
 
 
 extern uint32_t cfg_get();
