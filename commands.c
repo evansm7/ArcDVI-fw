@@ -34,6 +34,7 @@
 #include "commands.h"
 #include "vidc_regs.h"
 #include "video.h"
+#include "dvo.h"
 #include "fpga.h"
 #include "hw.h"
 
@@ -269,6 +270,21 @@ fail:
         return;
 }
 
+static void cmd_vmult(char *args)
+{
+        int OK;
+        unsigned int m;
+
+        m = atoh(args, &args, &OK);
+        if (!OK) {
+                printf("\r\n Syntax error, arg 0\r\n");
+                goto fail;
+        }
+        video_pclk_mult(m);
+fail:
+        return;
+}
+
 static void cmd_led(char *args)
 {
         int OK;
@@ -387,6 +403,13 @@ static void cmd_dump_regs(char *args)
         dump_regs(0, 128);
         printf("Video regs:\r\n");
         dump_regs(0x800, 16);
+        printf("Ctrl regs:\r\n");
+        dump_regs(0xc00, 8);
+}
+
+static void cmd_dvo_init(char *args)
+{
+	dvo_init();
 }
 
 /*****************************************************************************/
@@ -412,6 +435,9 @@ static cmd_t commands[] = {
         { .format = "vc",
           .help = "vc <ctrl>\t\t\t\tSet control reg",
           .handler = cmd_vctrl },
+        { .format = "vm",
+          .help = "vm <mult10>\t\t\t\tSet multiplier x10",
+          .handler = cmd_vmult },
         { .format = "led",
           .help = "led <0|1>\t\t\t\tSet LED",
           .handler = cmd_led },
@@ -442,6 +468,9 @@ static cmd_t commands[] = {
         { .format = "dr",
           .help = "dr\t\t\t\t\tDump FPGA register space",
           .handler = cmd_dump_regs },
+        { .format = "dvoi",
+          .help = "dvoi\t\t\t\t\tDVO reinit",
+          .handler = cmd_dvo_init },
 };
 
 static int num_commands = sizeof(commands)/sizeof(cmd_t);
