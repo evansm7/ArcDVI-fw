@@ -123,6 +123,10 @@ int main()
         dvo_init();
         video_init();
 
+	/* If we're in test mode, initialise output to a sane mode: */
+	if (flag_test_mode)
+		video_set_mode(VMODE_VGA73);
+
         /* Active hot-spinning loop to poll various services (monitor regs,
          * interactive UART IO, update OSD, etc.)
          */

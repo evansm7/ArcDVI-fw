@@ -70,9 +70,19 @@
  * 10:0         Cursor X offset
  */
 
+/* Test video modes (for test FPGA) */
+typedef enum {
+	VMODE_VGA73 = 0,
+	VMODE_SVGA,
+	VMODE_XGA,
+	VMODE_1152,
+	VMODE_1280,
+} vidmode_t;
+
 void    video_init(void);
 void    video_sync(void);
 void    video_probe_mode(bool force);
+void	video_set_mode(vidmode_t m);
 void    video_dump_timing_regs(void);
 void    video_set_x_timing(unsigned int xres, unsigned int fp, unsigned int sw,
                            unsigned int bp, unsigned int wpl);

@@ -46,6 +46,21 @@
 #define CRR()           fpga_read32(FPGA_CTRL(CTRL_REG))
 #define CRW(val)        fpga_write32(FPGA_CTRL(CTRL_REG), val)
 
+
+typedef struct {
+	unsigned int x, xfp, xsw, xbp;
+	unsigned int y, yfp, ysw, ybp;
+	unsigned int mult;
+} vidmode_timing_t;
+
+static const vidmode_timing_t modes[] = {
+	[VMODE_VGA73] = { 640, 24, 40, 128, 480, 9, 2, 29, 5 },
+	[VMODE_SVGA]  = { 800, 32, 64, 152, 600, 1, 3, 27, 10 },
+	[VMODE_XGA]   = { 1024, 24, 136, 160, 768, 3, 6, 29, 10 },
+	[VMODE_1152]  = { 1152, 72, 128, 200, 864, 1, 3, 39, 20 },
+	[VMODE_1280]  = { 1280, 16, 144, 248, 1024, 1, 3, 38, 20 },
+};
+
 void    video_init()
 {
         int i;
@@ -66,6 +81,15 @@ void    video_init()
                 printf("*** WARNING *** PLL lock timeout (CR %08x)\r\n", CRR());
         /* Release logic reset */
         CRW(CR_PLL_NRESET);
+}
+
+void 	video_set_mode(vidmode_t m)
+{
+	const vidmode_timing_t *t = &modes[m];
+	video_pclk_mult(t->mult);
+	video_set_x_timing(t->x, t->xfp, t->xsw, t->xbp, 10);
+	video_set_y_timing(t->y, t->yfp, t->ysw, t->ybp);
+	video_sync();
 }
 
 /* Dynamically reconfigure the output pixel clock rate:
