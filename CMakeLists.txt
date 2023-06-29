@@ -45,7 +45,7 @@ if (TARGET tinyusb_device)
     main.c
     fpga.c
     # In future, conditionally include a driver corresponding to HW reqs:
-    dvo_tda19988.c
+    dvo_adv7513.c
     fpga_bitstream.S
     commands.c
     video.c
