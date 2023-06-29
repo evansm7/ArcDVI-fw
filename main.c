@@ -42,6 +42,7 @@
 extern uint8_t fpga_bitstream[];
 extern unsigned int fpga_bitstream_length;
 uint8_t flag_autoprobe_mode = 1;
+uint8_t flag_test_mode = 0;
 
 /******************************************************************************/
 
@@ -116,6 +117,9 @@ int main()
 
         sleep_ms(10);
 
+	if (fpga_read32(FPGA_CTRL(CTRL_ID)) & CTRL_ID_TEST)
+		flag_test_mode = 1;
+
         dvo_init();
         video_init();
 
@@ -126,7 +130,8 @@ int main()
                 /* Poll user IO */
                 cmd_poll();
 
-                vidc_config_poll();
+		if (!flag_test_mode)
+			vidc_config_poll();
         }
 
 	return 0;

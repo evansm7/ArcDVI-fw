@@ -100,6 +100,7 @@
 #define FPGA_CTRL(x)            (0xc00 + (x))
 
 #define CTRL_ID                 0
+#define CTRL_ID_TEST		0x800000	/* Bitstream is a standalone test design */
 #define CTRL_REG                1
 #define         CR_RESET        0x01
 #define         CR_PLL_NRESET   0x02

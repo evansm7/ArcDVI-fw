@@ -39,8 +39,10 @@
 
 
 extern uint8_t flag_autoprobe_mode;
+extern uint8_t flag_test_mode;
 
 #define PROMPT "> "
+#define TEST_PROMPT "test> "
 
 typedef void (*cmd_fn_t)(char *args);
 
@@ -99,7 +101,7 @@ void    cmd_poll(void)
                         cmd_parse(buf, len);
                         line_done = 0;
                         len = 0;
-                        printf(PROMPT);
+                        printf(flag_test_mode ? TEST_PROMPT : PROMPT);
                 }
         }
 }
