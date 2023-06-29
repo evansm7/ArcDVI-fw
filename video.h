@@ -80,6 +80,7 @@ void    video_set_y_timing(unsigned int yres, unsigned int fp, unsigned int sw,
                            unsigned int bp);
 void    video_set_cursor_x(unsigned int offset);
 void    video_set_ctrl(unsigned int ctrl);
+void    video_pclk_mult(unsigned int factor);
 
 #endif
 

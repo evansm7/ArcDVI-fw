@@ -73,7 +73,7 @@ void    video_init()
  * Parameter is multiplication factor times 10, i.e.
  * 10, 15, 20, 40 for the standard 1x, 1.5x, 2x, 4x rates.
  */
-static void     video_pclk_mult(unsigned int factor)
+void     video_pclk_mult(unsigned int factor)
 {
 #define RECONFIGURE_PLL_COEFFS yes
 #ifdef RECONFIGURE_PLL_COEFFS
@@ -115,16 +115,28 @@ static void     video_pclk_mult(unsigned int factor)
                 cfg |= 23 << 4;         /* DIVF */
                 cfg |= 4 << 11;         /* DIVQ */
                 cfg |= 2 << 14;         /* FILTER_RANGE */
-        } else {
-                if (factor != 10) {
-                        printf("*** Pclk multiplication factor %d not supported!\n",
-                               factor);
-                }
+        } else if (factor == 10) {
                 /* x1 */
                 cfg |= 0;               /* DIVR */
                 cfg |= 31 << 4;         /* DIVF */
                 cfg |= 5 << 11;         /* DIVQ */
                 cfg |= 2 << 14;         /* FILTER_RANGE */
+	} else if (factor == 5) {
+                /* x0.5 */
+                cfg |= 0;               /* DIVR */
+                cfg |= 15 << 4;         /* DIVF */
+                cfg |= 5 << 11;         /* DIVQ */
+                cfg |= 4 << 14;         /* FILTER_RANGE */
+	} else {
+                if (factor != 4) {
+                        printf("*** Pclk multiplication factor %d not supported!\n",
+                               factor);
+                }
+                /* 4 = x0.38 (i.e. 24 from 62.5) */
+                cfg |= 3;               /* DIVR */
+                cfg |= 48 << 4;         /* DIVF */
+                cfg |= 5 << 11;         /* DIVQ */
+                cfg |= 1 << 14;         /* FILTER_RANGE */
         }
 
         printf("Setting PLL config %08x (mult factor %d.%d): real pclk %d MHz\r\n",
