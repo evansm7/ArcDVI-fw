@@ -1,12 +1,14 @@
 # ArcDVI-fw: Digital video output for the Acorn Archimedes
 
-26 July 2022
+2 July 2023
 
 ArcDVI is a hardware add-on allowing Acorn Archimedes computers to output video via DVI.  Retrocompute on a _quality_ monitor! :)
 
 The ArcDVI project comprises several parts:
 
-   * The [PCB designs](https://github.com/evansm7/ArcDVI-PCB), which contain an FPGA and microcontroller
+   * The [main PCB](https://github.com/evansm7/ArcDVI-PCB-main), which
+     contains an FPGA and a MCU (on which this firmware runs).
+   * "VIDC" PCBs: either an [interposer](https://github.com/evansm7/ArcDVI-PCB-VIDC-skt) that holds VIDC in socketed machines (e.g. A440), or a [clip-over](https://github.com/evansm7/ArcDVI-PCB-VIDC) board for machines in which VIDC is soldered down (e.g. A3000)
    * The [FPGA design](https://github.com/evansm7/ArcDVI-hw)
    * The microcontroller [firmware](https://github.com/evansm7/ArcDVI-fw) (__This repo__)
    * Optional extension/test [software](https://github.com/evansm7/ArcDVI-sw) for RISC OS
@@ -16,7 +18,8 @@ The ArcDVI project comprises several parts:
 
 This firmware is written for the RP2040 microcontroller on the ArcDVI board, and has several duties/features:
 
-   * Initialises the video transmitter/serialiser IC over I2C (supports TDA19988)
+   * Initialises the video transmitter/serialiser IC over I2C
+     (supports ADV7513, previously TDA19988)
    * Programs the iCE40HX FPGA bitstream
    * Provides a USB CDC debug console, with commands/debug to control & monitor mode changes and video config
    * Provides a register read/write interface to FPGA registers over SPI
@@ -63,5 +66,5 @@ The output is `firmware.uf2`.  This is usually programmed by putting the RP2040 
 
 ## Copyrights & licence
 
-Copyright 2021-2022 Matt Evans, and provided under the MIT licence.
+Copyright 2021-2023 Matt Evans, and provided under the MIT licence.
 
