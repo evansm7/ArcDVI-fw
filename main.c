@@ -125,7 +125,7 @@ int main()
 
 	/* If we're in test mode, initialise output to a sane mode: */
 	if (flag_test_mode)
-		video_set_mode(VMODE_VGA73);
+		video_set_mode(VMODE_1152);
 
         /* Active hot-spinning loop to poll various services (monitor regs,
          * interactive UART IO, update OSD, etc.)
