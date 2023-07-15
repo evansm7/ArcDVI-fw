@@ -412,6 +412,11 @@ static void cmd_dvo_init(char *args)
 	dvo_init();
 }
 
+static void cmd_dvo_status(char *args)
+{
+	dvo_status();
+}
+
 /*****************************************************************************/
 
 static void cmd_help(char *args);
@@ -471,6 +476,9 @@ static cmd_t commands[] = {
         { .format = "dvoi",
           .help = "dvoi\t\t\t\t\tDVO reinit",
           .handler = cmd_dvo_init },
+        { .format = "dvos",
+          .help = "dvos\t\t\t\t\tDVO status",
+          .handler = cmd_dvo_status },
 };
 
 static int num_commands = sizeof(commands)/sizeof(cmd_t);

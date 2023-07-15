@@ -42,6 +42,7 @@
 #define VDB(x...)       do {} while(0)
 #endif
 
+#define RR(x)		dvo_reg_read(VID_ADDR_MAIN, x)
 
 static void     vid_i2c_init()
 {
@@ -65,6 +66,11 @@ static int	dvo_reg_read(uint8_t addr, uint8_t reg)
 {
 	int r;
 	uint8_t rxd;
+        uint8_t buff[2];
+        buff[0] = reg;
+        r = i2c_write_blocking(MCU_VID_I2C, addr, buff, 1, true); // No stop
+	if (r < 0)
+		return -1;
 	r = i2c_read_blocking(MCU_VID_I2C, addr, &rxd, 1, false);
 	return r < 0 ? -1 : rxd;
 }
@@ -90,19 +96,19 @@ int     dvo_init_output()
 {
 	i2c_scan();
 
-	VDB(" HW rev 0x%02x\r\n", dvo_reg_read(VID_ADDR_MAIN, 0));
+	VDB(" HW rev 0x%02x\r\n", dvo_reg_read(VID_ADDR_MAIN, VIDR_CHIP_REV));
 
 	/* From the manual's 'quick start' init sequence: */
-	dvo_reg_write(VID_ADDR_MAIN, 0x41, 0x10); // power down = 0
-
-	dvo_reg_write(VID_ADDR_MAIN, 0x98, 0x03);
-	dvo_reg_write(VID_ADDR_MAIN, 0x9a, 0xe0);
-	dvo_reg_write(VID_ADDR_MAIN, 0x9c, 0x30);
-	dvo_reg_write(VID_ADDR_MAIN, 0x9d, 0x01);
-	dvo_reg_write(VID_ADDR_MAIN, 0xa2, 0xa4);
-	dvo_reg_write(VID_ADDR_MAIN, 0xa3, 0xa4);
-	dvo_reg_write(VID_ADDR_MAIN, 0xe0, 0xd0);
-	dvo_reg_write(VID_ADDR_MAIN, 0xf9, 0x00);
+	dvo_reg_write(VID_ADDR_MAIN, VIDR_POWER, VIDR_POWER_RESVD);
+	sleep_ms(10);
+	dvo_reg_write(VID_ADDR_MAIN, VIDR_MISC0, VIDR_MISC0_VAL);
+	dvo_reg_write(VID_ADDR_MAIN, VIDR_MISC1, VIDR_MISC1_VAL);
+	dvo_reg_write(VID_ADDR_MAIN, VIDR_MISC2, VIDR_MISC2_VAL);
+	dvo_reg_write(VID_ADDR_MAIN, VIDR_PCLK_DIV, VIDR_PCLK_DIV_RESVD);
+	dvo_reg_write(VID_ADDR_MAIN, VIDR_MISC3, VIDR_MISC3_VAL);
+	dvo_reg_write(VID_ADDR_MAIN, VIDR_MISC4, VIDR_MISC4_VAL);
+	dvo_reg_write(VID_ADDR_MAIN, VIDR_MISC5, VIDR_MISC5_VAL);
+	dvo_reg_write(VID_ADDR_MAIN, VIDR_MISC6, VIDR_MISC6_VAL);
 
 	dvo_reg_write(VID_ADDR_MAIN, 0x16, 0x30);
 
@@ -124,4 +130,32 @@ int     dvo_init()
 /* Mute I2S audio */
 int     dvo_mute(bool muted)
 {
+}
+
+int	dvo_status()
+{
+	/* Dump regs */
+        printf("--- ADV7513 reg space:\r\n");
+        for (unsigned int addr = 0; addr < 0x100; addr++) {
+                int r;
+                uint8_t rxd;
+
+                printf("%02x: ", addr);
+
+		rxd = RR(addr);
+                printf("%02x ", rxd);
+
+                printf((addr & 15) == 15 ? "\r\n" : "  ");
+        }
+        printf("--- CTS %06x, SPDIF_SAMP %x\r\n",
+	       ((unsigned int)(RR(VIDR_CTS0) & 0x0f) << 16) |
+	       ((unsigned int)RR(VIDR_CTS1) << 8) |
+	       RR(VIDR_CTS2),
+	       RR(VIDR_CTS0) >> 4);
+        printf("--- VIC_RPT_RX %02x, VIC_ACTUAL %02x, VIC_AUX_PROG_INFO %02x\r\n",
+	       RR(VIDR_VIC_RPT_RX), RR(VIDR_VIC_ACTUAL), RR(VIDR_VIC_AUX_PROG_INFO));
+        printf("--- STATUS0 %02x, PLL %02x, ENC %02x, DDC %02x\r\n",
+	       RR(VIDR_STATUS0), RR(VIDR_PLL_STATUS), RR(VIDR_ENC_STATUS), RR(VIDR_DDC_STATUS));
+
+	return 0;
 }

@@ -182,3 +182,8 @@ int     dvo_mute(bool muted)
  * - Gamma?
  * - EDID?
  */
+
+int	dvo_status()
+{
+	return 0;
+}

@@ -28,5 +28,6 @@
 /* Interface to video serialiser driver(s) */
 
 int     dvo_init();
+int     dvo_status();
 
 #endif
