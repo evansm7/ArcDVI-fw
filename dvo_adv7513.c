@@ -98,6 +98,14 @@ int     dvo_init_output()
 
 	VDB(" HW rev 0x%02x\r\n", dvo_reg_read(VID_ADDR_MAIN, VIDR_CHIP_REV));
 
+	/* FIXME: Should monitor the HPD signal (reg VIDR_STATUS0 bit 6) and release powerdown when high.
+	 * The input HPD value can be overridden using the HPD Control reg; it's useful to wire this high
+	 * so that plug/unplug doesn't need detection/reconfiguration each time.
+	 *
+	 * Currently, I'm hoping this also overrides the fact that some regs are reset when HPD goes low.
+	 */
+	dvo_reg_write(VID_ADDR_MAIN, VIDR_HPD_CONTROL, VIDR_HPD_CONTROL_HIGH);
+
 	/* From the manual's 'quick start' init sequence: */
 	dvo_reg_write(VID_ADDR_MAIN, VIDR_POWER, VIDR_POWER_RESVD);
 	sleep_ms(10);
