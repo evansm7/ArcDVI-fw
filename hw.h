@@ -45,8 +45,8 @@
 #define MCU_FPGA_D5             12      /* In/out */
 #define MCU_FPGA_D6             13      /* In/out */
 #define MCU_FPGA_D7             14      /* In/out */
-#define MCU_FPGA_STROBE_IN      15      /* In */
-#define MCU_FPGA_STROBE_OUT     16      /* Out */
+#define MCU_FPGA_STROBE         15      /* In */
+#define MCU_FPGA_VALID          16      /* In */
 
 /* Video serialiser's I2S audio interface */
 #define MCU_VID_I2S_WS          17      /* Out */

@@ -76,7 +76,7 @@ void    fpga_init()
         GPIO_INIT_OUT(MCU_FPGA_SS);
         gpio_put(MCU_FPGA_SS, 0);                       /* Must be 0 at FPGA reset */
 
-        /* FIXME, eventually PIO */
+        /* Input bus for PIO */
         GPIO_INIT_IN_PU(MCU_FPGA_D0);
         GPIO_INIT_IN_PU(MCU_FPGA_D1);
         GPIO_INIT_IN_PU(MCU_FPGA_D2);
@@ -85,9 +85,8 @@ void    fpga_init()
         GPIO_INIT_IN_PU(MCU_FPGA_D5);
         GPIO_INIT_IN_PU(MCU_FPGA_D6);
         GPIO_INIT_IN_PU(MCU_FPGA_D7);
-        GPIO_INIT_IN_PU(MCU_FPGA_STROBE_IN);
-        GPIO_INIT_OUT(MCU_FPGA_STROBE_OUT);
-        gpio_put(MCU_FPGA_STROBE_OUT, 0);
+        GPIO_INIT_IN_PU(MCU_FPGA_STROBE);
+        GPIO_INIT_IN_PU(MCU_FPGA_VALID);		/* Really a misc framing signal */
 
         FDB("    Done\n");
 }
